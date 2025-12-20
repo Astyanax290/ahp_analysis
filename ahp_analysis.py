@@ -24,6 +24,8 @@
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
+from .ahp_utils import calculate_weights, consistency_ratio
+from .ahp_raster import load_raster, weighted_raster
 
 # Initialize Qt resources from file resources.py
 from .resources import *
