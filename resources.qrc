@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/plugins/ahp_analysis" >
+        <file>icon.png</file>
+    </qresource>
+</RCC>
