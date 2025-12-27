@@ -1,6 +1,6 @@
-##### Analyse Multicritère Hiérarchique (AHP Raster)
+## Analyse Multicritère Hiérarchique (AHP Raster)
 
-###### **Présentation**
+### **Présentation**
 
 Analyse Multicritère Hiérarchique (AHP Raster) est un plugin QGIS permettant de réaliser des analyses multicritères spatiales basées sur la méthode AHP (Analytic Hierarchy Process) de Saaty, appliquées à des données raster classifiées.
 
@@ -8,7 +8,7 @@ Le plugin s’adresse aux géographes, géomaticiens, urbanistes, chercheurs et 
 
 
 
-###### **Principe méthodologique**
+### **Principe méthodologique**
 
 Le plugin suit strictement les étapes de la méthode AHP :
 
@@ -26,7 +26,7 @@ Le ratio de cohérence (CR) est automatiquement calculé et doit être ≤ 0.1 p
 
 
 
-###### **Prérequis**
+### **Prérequis**
 
 QGIS ≥ 3.xx
 
@@ -38,7 +38,7 @@ mêmes projections
 
 
 
-###### **Cas d’usage**
+### **Cas d’usage**
 
 * Analyse territoriale
   Aide à la décision spatiale
@@ -47,7 +47,7 @@ mêmes projections
 
 
 
-###### **Limites connues**
+### **Limites connues**
 
 Les rasters Cost ne sont pas inversés automatiquement
 
@@ -57,22 +57,22 @@ L’analyse est limitée à des rasters pas aux vecteurs
 
 
 
-**Auteur**
+### **Auteur**
+
 Sewedo GNANSOUNOU
----
 
 Projet développé dans un cadre académique.
 
 
 
-###### **Licence**
+### **Licence**
 
 Ce projet est distribué sous licence GNU GPL v3.
 Voir le fichier LICENSE pour plus de détails.
 
 
 
-###### **Perspectives d’évolution**
+### **Perspectives d’évolution**
 
 Inversion automatique des critères Cost
 Export des poids et matrices (CSV)
