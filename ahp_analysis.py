@@ -21,69 +21,49 @@
  *                                                                         *
  ***************************************************************************/
 """
+
+
+import os
+
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
-from .ahp_utils import calculate_weights, consistency_ratio
-from .ahp_raster import load_raster, weighted_raster
+from qgis.PyQt.QtWidgets import QAction, QToolBar
 
-# Initialize Qt resources from file resources.py
+# Qt resources
 from .resources import *
-# Import the code for the dialog
+
+# Dialogue principal
 from .ahp_analysis_dialog import AhpAnalysisDialog
-import os.path
 
 
 class AhpAnalysis:
-    """QGIS Plugin Implementation."""
+    """Implémentation principale du plugin QGIS."""
 
     def __init__(self, iface):
-        """Constructor.
-
-        :param iface: An interface instance that will be passed to this class
-            which provides the hook by which you can manipulate the QGIS
-            application at run time.
-        :type iface: QgsInterface
-        """
-        # Save reference to the QGIS interface
+        """Constructeur."""
         self.iface = iface
-        # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
-        # initialize locale
-        locale = QSettings().value('locale/userLocale')[0:2]
+        self.actions = []
+        self.menu = self.tr('&Analyse AHP Raster ')
+
+        # Traduction
+        locale = QSettings().value('locale/userLocale', 'en')[0:2]
         locale_path = os.path.join(
             self.plugin_dir,
             'i18n',
-            'AhpAnalysis_{}.qm'.format(locale))
+            f'AhpAnalysis_{locale}.qm'
+        )
 
         if os.path.exists(locale_path):
             self.translator = QTranslator()
             self.translator.load(locale_path)
             QCoreApplication.installTranslator(self.translator)
 
-        # Declare instance attributes
-        self.actions = []
-        self.menu = self.tr(u'&Hierarchical Multi-Criteria Analysis')
+        self.dlg = None  # Dialogue créé au premier lancement
 
-        # Check if plugin was started the first time in current QGIS session
-        # Must be set in initGui() to survive plugin reloads
-        self.first_start = None
-
-    # noinspection PyMethodMayBeStatic
     def tr(self, message):
-        """Get the translation for a string using Qt translation API.
-
-        We implement this ourselves since we do not inherit QObject.
-
-        :param message: String for translation.
-        :type message: str, QString
-
-        :returns: Translated version of message.
-        :rtype: QString
-        """
-        # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
+        """Traduction."""
         return QCoreApplication.translate('AhpAnalysis', message)
-
 
     def add_action(
         self,
@@ -93,110 +73,80 @@ class AhpAnalysis:
         enabled_flag=True,
         add_to_menu=True,
         add_to_toolbar=True,
-        status_tip=None,
-        whats_this=None,
-        parent=None):
-        """Add a toolbar icon to the toolbar.
-
-        :param icon_path: Path to the icon for this action. Can be a resource
-            path (e.g. ':/plugins/foo/bar.png') or a normal file system path.
-        :type icon_path: str
-
-        :param text: Text that should be shown in menu items for this action.
-        :type text: str
-
-        :param callback: Function to be called when the action is triggered.
-        :type callback: function
-
-        :param enabled_flag: A flag indicating if the action should be enabled
-            by default. Defaults to True.
-        :type enabled_flag: bool
-
-        :param add_to_menu: Flag indicating whether the action should also
-            be added to the menu. Defaults to True.
-        :type add_to_menu: bool
-
-        :param add_to_toolbar: Flag indicating whether the action should also
-            be added to the toolbar. Defaults to True.
-        :type add_to_toolbar: bool
-
-        :param status_tip: Optional text to show in a popup when mouse pointer
-            hovers over the action.
-        :type status_tip: str
-
-        :param parent: Parent widget for the new action. Defaults None.
-        :type parent: QWidget
-
-        :param whats_this: Optional text to show in the status bar when the
-            mouse pointer hovers over the action.
-
-        :returns: The action that was created. Note that the action is also
-            added to self.actions list.
-        :rtype: QAction
-        """
-
+        parent=None
+    ):
+        """Ajoute une action au menu et à la barre d’outils."""
         icon = QIcon(icon_path)
         action = QAction(icon, text, parent)
         action.triggered.connect(callback)
         action.setEnabled(enabled_flag)
 
-        if status_tip is not None:
-            action.setStatusTip(status_tip)
-
-        if whats_this is not None:
-            action.setWhatsThis(whats_this)
-
         if add_to_toolbar:
-            # Adds plugin icon to Plugins toolbar
             self.iface.addToolBarIcon(action)
 
         if add_to_menu:
-            self.iface.addPluginToMenu(
-                self.menu,
-                action)
+            self.iface.addPluginToMenu(self.menu, action)
 
         self.actions.append(action)
-
         return action
 
     def initGui(self):
-        """Create the menu entries and toolbar icons inside the QGIS GUI."""
-
-        icon_path = ':/plugins/ahp_analysis/icon.png'
+        """Initialisation GUI."""
+        icon_path = ':/plugins/ahp_analysis/icon2.png'
         self.add_action(
             icon_path,
-            text=self.tr(u'AHP Analysis'),
+            text=self.tr('Analyse AHP Raster'),
             callback=self.run,
-            parent=self.iface.mainWindow())
-
-        # will be set False in run()
-        self.first_start = True
-
-
+            parent=self.iface.mainWindow()
+        )
+        # Mettre à jour l'icône si nécessaire
+        # Par exemple avec un nouveau fichier
+        self.update_icon(':/plugins/ahp_analysis/icon2.png')
+        
     def unload(self):
-        """Removes the plugin menu item and icon from QGIS GUI."""
+        """Nettoyage du plugin."""
         for action in self.actions:
-            self.iface.removePluginMenu(
-                self.tr(u'&Hierarchical Multi-Criteria Analysis'),
-                action)
+            self.iface.removePluginMenu(self.menu, action)
             self.iface.removeToolBarIcon(action)
 
+    def _on_dialog_closed(self):
+        """Détruit complètement le dialogue."""
+        self.dlg.deleteLater()
+        self.dlg = None
+
+    def update_icon(self, new_icon_path):
+        """Met à jour l’icône du plugin dans le menu et la barre d’outils."""
+        # Supprimer toutes les actions existantes
+        for action in self.actions:
+            self.iface.removePluginMenu(self.menu, action)
+            self.iface.removeToolBarIcon(action)
+            action.deleteLater()
+        self.actions = []
+
+        # Créer une nouvelle action avec la nouvelle icône
+        self.add_action(
+            new_icon_path,
+            text=self.tr('Analyse AHP Raster'),
+            callback=self.run,
+            parent=self.iface.mainWindow()
+        )
+
+        # Rafraîchir la GUI
+        self.iface.mainWindow().menuBar().repaint()
+        for tb in self.iface.mainWindow().findChildren(QToolBar):
+            tb.repaint()
+
+    # ======================================================
+    # ===================== UI RUN =========================
+    # ======================================================
 
     def run(self):
-        """Run method that performs all the real work"""
+        """Ouvre le dialogue AHP (nouvelle instance à chaque fois)."""
+        self.dlg = AhpAnalysisDialog(self.iface.mainWindow())
 
-        # Create the dialog with elements (after translation) and keep reference
-        # Only create GUI ONCE in callback, so that it will only load when the plugin is started
-        if self.first_start == True:
-            self.first_start = False
-            self.dlg = AhpAnalysisDialog()
+        # À la fermeture → destruction complète
+        self.dlg.finished.connect(self._on_dialog_closed)
 
-        # show the dialog
         self.dlg.show()
-        # Run the dialog event loop
-        result = self.dlg.exec_()
-        # See if OK was pressed
-        if result:
-            # Do something useful here - delete the line containing pass and
-            # substitute with your code.
-            pass
+        self.dlg.raise_()
+        self.dlg.activateWindow()

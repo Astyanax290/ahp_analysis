@@ -23,22 +23,583 @@
 """
 
 import os
-
+import numpy as np
 from qgis.PyQt import uic
-from qgis.PyQt import QtWidgets
+from qgis.PyQt.QtWidgets import (QDialog, QTableWidgetItem, QComboBox, 
+                                  QMessageBox, QHeaderView, QLineEdit,
+                                  QDoubleSpinBox, QLabel)
+from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtGui import QColor
+from qgis.core import QgsProject, QgsRasterLayer
+from qgis.analysis import QgsRasterCalculator, QgsRasterCalculatorEntry
+from .ahp_utils import calculate_weights, consistency_ratio
+from .ahp_raster import (
+    weighted_raster,
+    check_raster_compatibility,
+)
+from qgis.PyQt.QtWidgets import QFileDialog
 
-# This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
+
+
+# Chargement du fichier .ui
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'ahp_analysis_dialog_base.ui'))
 
 
-class AhpAnalysisDialog(QtWidgets.QDialog, FORM_CLASS):
+class AhpAnalysisDialog(QDialog, FORM_CLASS):
+    """Dialogue principal pour l'analyse AHP."""
+    
     def __init__(self, parent=None):
-        """Constructor."""
+        """Constructeur."""
         super(AhpAnalysisDialog, self).__init__(parent)
-        # Set up the user interface from Designer through FORM_CLASS.
-        # After self.setupUi() you can access any designer object by doing
-        # self.<objectname>, and you can use autoconnect slots - see
-        # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
-        # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+        
+        # Initialisation des variables
+        self.criteria = []  # Liste des critères définis
+        self.criteria_validated = False  # Flag de validation
+        self.raster_assignments = {}  # {criterion: {'layer': QgsRasterLayer, 'type': 'Benefit/Cost'}}
+        self.reference_raster = None  # Premier raster sélectionné (référence)
+        self.pairwise_matrix = None  # Matrice numpy de comparaison
+        self.weights = None  # Poids calculés
+        self.cr_value = None  # Ratio de cohérence
+        
+        # Connexion des signaux
+        self._connect_signals()
+        
+        # Initialisation de l'interface
+        self._init_ui()
+    
+    def _connect_signals(self):
+        """Connexion des signaux aux slots."""
+        # Page 1 - Critères
+        self.addCriterionBtn.clicked.connect(self._add_criterion)
+        self.removeCriterionBtn.clicked.connect(self._remove_criterion)
+        self.clearCriteriaBtn.clicked.connect(self._clear_criteria)
+        self.validateCriteriaBtn.clicked.connect(self._validate_criteria)
+        
+        # Navigation
+        self.previousBtn.clicked.connect(self._previous_page)
+        self.nextBtn.clicked.connect(self._next_page)
+        
+        # Page 4 - Génération
+        self.generateRasterBtn.clicked.connect(self._generate_final_raster)
+    
+    def _init_ui(self):
+        """Initialisation de l'interface utilisateur."""
+        self.stackedWidget.setCurrentIndex(0)
+
+        self.criteriaTable.horizontalHeader().setStretchLastSection(True)
+
+        self.criteria_validated = False
+
+        self._update_navigation_buttons()
+
+    
+    # ========================================================================
+    # PAGE 1: DÉFINITION DES CRITÈRES
+    # ========================================================================
+    
+    def _add_criterion(self):
+        """Ajouter une nouvelle ligne pour un critère."""
+        if self.criteria_validated:
+            QMessageBox.warning(self, "Critères validés", 
+                                "Les critères ont déjà été validés. Vous ne pouvez plus les modifier.")
+            return
+        
+        row_count = self.criteriaTable.rowCount()
+        self.criteriaTable.insertRow(row_count)
+        
+        # Cellule éditable pour le nom du critère
+        item = QTableWidgetItem("")
+        self.criteriaTable.setItem(row_count, 0, item)
+    
+    def _remove_criterion(self):
+        """Supprimer la ligne sélectionnée."""
+        if self.criteria_validated:
+            QMessageBox.warning(self, "Critères validés", 
+                                "Les critères ont déjà été validés. Vous ne pouvez plus les modifier.")
+            return
+        
+        current_row = self.criteriaTable.currentRow()
+        if current_row >= 0:
+            self.criteriaTable.removeRow(current_row)
+    
+    def _clear_criteria(self):
+        """Effacer tous les critères."""
+        if self.criteria_validated:
+            QMessageBox.warning(self, "Critères validés", 
+                                "Les critères ont déjà été validés. Vous ne pouvez plus les modifier.")
+            return
+        
+        self.criteriaTable.setRowCount(0)
+    
+    def _validate_criteria(self):
+        """Valider les critères définis."""
+        # Récupérer les critères
+        criteria = []
+        for row in range(self.criteriaTable.rowCount()):
+            item = self.criteriaTable.item(row, 0)
+            if item and item.text().strip():
+                criterion_name = item.text().strip()
+                if criterion_name in criteria:
+                    self.page1StatusLabel.setText(" Erreur : Critères dupliqués détectés.")
+                    return
+                criteria.append(criterion_name)
+        
+        # Validation
+        if len(criteria) < 3:
+            self.page1StatusLabel.setText(" Veuillez définir au moins 3 critères.")
+            return
+        
+        # Validation réussie
+        self.criteria = criteria
+        self.criteria_validated = True
+        self.page1StatusLabel.setText(f" {len(criteria)} critères validés avec succès.")
+        self.page1StatusLabel.setStyleSheet("color: green; font-weight: bold;")
+        
+        # Désactiver la table et les boutons
+        self.criteriaTable.setEnabled(False)
+        self.addCriterionBtn.setEnabled(False)
+        self.removeCriterionBtn.setEnabled(False)
+        self.clearCriteriaBtn.setEnabled(False)
+        self.validateCriteriaBtn.setEnabled(False)
+        
+        # Activer la navigation vers la page 2
+        self.nextBtn.setEnabled(True)
+        
+        # Préparer la page 2
+        self._setup_page2()
+    
+    # ========================================================================
+    # PAGE 2: ASSIGNATION DES RASTERS
+    # ========================================================================
+    
+    def _setup_page2(self):
+        """Préparer la table d'assignation des rasters."""
+        self.rasterAssignmentTable.setRowCount(len(self.criteria))
+        
+        # Obtenir les couches raster du projet
+        raster_layers = [layer for layer in QgsProject.instance().mapLayers().values() 
+                         if isinstance(layer, QgsRasterLayer)]
+        
+        for row, criterion in enumerate(self.criteria):
+            # Colonne 0: Nom du critère (lecture seule)
+            criterion_item = QTableWidgetItem(criterion)
+            criterion_item.setFlags(criterion_item.flags() & ~Qt.ItemIsEditable)
+            self.rasterAssignmentTable.setItem(row, 0, criterion_item)
+            
+            # Colonne 1: ComboBox pour sélectionner le raster
+            raster_combo = QComboBox()
+            raster_combo.addItem("-- Sélectionner un raster --", None)
+            for layer in raster_layers:
+                raster_combo.addItem(layer.name(), layer)
+            raster_combo.currentIndexChanged.connect(
+                lambda idx, r=row: self._on_raster_selected(r))
+            self.rasterAssignmentTable.setCellWidget(row, 1, raster_combo)
+            
+            # Colonne 2: ComboBox pour le type (Benefit/Cost)
+            type_combo = QComboBox()
+            type_combo.addItem("Benefit")
+            type_combo.addItem("Cost")
+            self.rasterAssignmentTable.setCellWidget(row, 2, type_combo)
+            
+            # Colonne 3: Statut de compatibilité
+            status_item = QTableWidgetItem("⏳ En attente")
+            status_item.setFlags(status_item.flags() & ~Qt.ItemIsEditable)
+            status_item.setBackground(QColor(220, 220, 220))
+            self.rasterAssignmentTable.setItem(row, 3, status_item)
+        
+        # Ajuster les colonnes
+        self.rasterAssignmentTable.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.rasterAssignmentTable.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.rasterAssignmentTable.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.rasterAssignmentTable.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
+    
+    def _on_raster_selected(self, row):
+        """Callback lorsqu'un raster est sélectionné."""
+        raster_combo = self.rasterAssignmentTable.cellWidget(row, 1)
+        selected_layer = raster_combo.currentData()
+        if selected_layer is None:
+            status_item = self.rasterAssignmentTable.item(row, 3)
+            status_item.setText("⏳ En attente")
+            status_item.setBackground(QColor(220, 220, 220))
+
+            # Supprimer l’assignation existante
+            criterion = self.criteria[row]
+            self.raster_assignments.pop(criterion, None)
+
+            self._check_page2_completion()
+            return
+
+        selected_name = selected_layer.name()
+
+        for c, data in self.raster_assignments.items():
+            if data['layer'].name() == selected_name:
+                QMessageBox.warning(
+                    self,
+                    "Raster déjà utilisé",
+                    f"Le raster '{selected_name}' est déjà associé à un autre critère.\n"
+                    "Veuillez choisir un raster différent."
+                )
+                raster_combo.setCurrentIndex(0)
+                return
+        
+        if selected_layer is None:
+            # Réinitialiser le statut
+            status_item = self.rasterAssignmentTable.item(row, 3)
+            status_item.setText("⏳ En attente")
+            status_item.setBackground(QColor(220, 220, 220))
+            return
+        
+        # Vérifier la compatibilité spatiale
+
+        if self.reference_raster is None:
+            self.reference_raster = selected_layer
+            is_compatible, message = True, "Premier raster défini comme référence."
+        else:
+            is_compatible, message = check_raster_compatibility(
+                selected_layer,
+                self.reference_raster
+            )
+
+
+        status_item = self.rasterAssignmentTable.item(row, 3)
+        if is_compatible:
+            status_item.setText("✅ Compatible")
+            status_item.setBackground(QColor(144, 238, 144))  # Vert clair
+            
+            # Enregistrer l'assignation
+            criterion = self.criteria[row]
+            type_combo = self.rasterAssignmentTable.cellWidget(row, 2)
+            self.raster_assignments[criterion] = {
+                'layer': selected_layer,
+                'type': type_combo.currentText()
+            }
+        else:
+            status_item.setText("❌ Incompatible")
+            status_item.setBackground(QColor(255, 182, 193))  # Rouge clair
+            
+            # Afficher message d'erreur détaillé
+            QMessageBox.critical(self, "Incompatibilité raster", message)
+            
+            # Réinitialiser la sélection
+            raster_combo.setCurrentIndex(0)
+        
+        # Vérifier si tous les rasters sont assignés et compatibles
+        self._check_page2_completion()
+    
+        
+    def _check_page2_completion(self):
+        """Vérifie si tous les rasters sont assignés et compatibles."""
+        all_assigned = True
+
+        for row in range(self.rasterAssignmentTable.rowCount()):
+            status_item = self.rasterAssignmentTable.item(row, 3)
+            if status_item is None or "✅" not in status_item.text():
+                all_assigned = False
+                break
+
+        self._page2_completed = all_assigned
+
+        #  ACTIVER LE BOUTON SUIVANT IMMÉDIATEMENT
+        self.nextBtn.setEnabled(all_assigned)
+
+    
+    # ========================================================================
+    # PAGE 3: MATRICE DE COMPARAISON PAIR-À-PAIR
+    # ========================================================================
+    
+    def _setup_page3(self):
+        """Préparer la matrice de comparaison pair-à-pair."""
+        n = len(self.criteria)
+        
+        # Initialiser la matrice numpy
+        self.pairwise_matrix = np.ones((n, n))
+        
+        # Configurer la table
+        self.pairwiseMatrix.setRowCount(n)
+        self.pairwiseMatrix.setColumnCount(n)
+        
+        # Définir les en-têtes
+        self.pairwiseMatrix.setHorizontalHeaderLabels(self.criteria)
+        self.pairwiseMatrix.setVerticalHeaderLabels(self.criteria)
+        
+        # Remplir la matrice
+        for i in range(n):
+            for j in range(n):
+                if i == j:
+                    # Diagonale: valeur = 1, non éditable
+                    item = QTableWidgetItem("1.0")
+                    item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                    item.setBackground(QColor(200, 200, 200))
+                    self.pairwiseMatrix.setItem(i, j, item)
+                elif i < j:
+                    # Partie supérieure: SpinBox éditable (échelle de Saaty)
+                    spin = QDoubleSpinBox()
+                    spin.setMinimum(1.0)
+                    spin.setMaximum(9.0)
+                    spin.setSingleStep(1.0)
+                    spin.setValue(1.0)
+                    spin.valueChanged.connect(lambda val, row=i, col=j: self._on_matrix_value_changed(row, col, val))
+                    self.pairwiseMatrix.setCellWidget(i, j, spin)
+                else:
+                    # Partie inférieure: non éditable, calculée automatiquement
+                    item = QTableWidgetItem("1.0")
+                    item.setFlags(item.flags() & ~Qt.ItemIsEditable)
+                    item.setBackground(QColor(240, 240, 240))
+                    self.pairwiseMatrix.setItem(i, j, item)
+        
+        # Ajuster les colonnes
+        self.pairwiseMatrix.resizeColumnsToContents()
+
+        min_width = 120  # à ajuster selon ton UI
+
+        for col in range(self.pairwiseMatrix.columnCount()):
+            current = self.pairwiseMatrix.columnWidth(col)
+            self.pairwiseMatrix.setColumnWidth(col, max(current, min_width))
+
+    
+    def _on_matrix_value_changed(self, row, col, value):
+        """Callback lorsqu'une valeur de la matrice change."""
+        # Mettre à jour la matrice numpy
+        self.pairwise_matrix[row, col] = value
+        
+        # Calculer et afficher la valeur symétrique
+        symmetric_value = 1.0 / value if value != 0 else 1.0
+        self.pairwise_matrix[col, row] = symmetric_value
+        
+        # Mettre à jour l'affichage de la partie inférieure
+        symmetric_item = self.pairwiseMatrix.item(col, row)
+        if symmetric_item:
+            symmetric_item.setText(f"{symmetric_value:.4f}")
+        
+        # Recalculer les poids et le CR
+        self._calculate_ahp_weights()
+    
+    def _calculate_ahp_weights(self):
+        """Calculer les poids AHP et le ratio de cohérence."""
+        try:
+            # Calculer les poids
+            self.weights = calculate_weights(self.pairwise_matrix)
+            
+            # Calculer le CR
+            self.cr_value = consistency_ratio(self.pairwise_matrix)
+            
+            # Afficher les poids
+            weights_str = ", ".join([f"{w:.4f}" for w in self.weights])
+            self.weightsValueLabel.setText(weights_str)
+            
+            # Afficher le CR
+            self.crValueLabel.setText(f"{self.cr_value:.4f}")
+            
+            # Vérifier la cohérence
+            if self.cr_value > 0.1:
+                self.crValueLabel.setStyleSheet("color: red; font-weight: bold;")
+                self.page3StatusLabel.setText(
+                    " CR > 0.1 : La matrice n'est pas cohérente. Veuillez réviser vos comparaisons."
+                )
+                self.page3StatusLabel.setStyleSheet("color: red; font-weight: bold;")
+                self._page3_completed = False
+
+            else:
+                self.crValueLabel.setStyleSheet("color: green; font-weight: bold;")
+                self.page3StatusLabel.setText(" CR ≤ 0.1 : La matrice est cohérente.")
+                self.page3StatusLabel.setStyleSheet("color: green; font-weight: bold;")
+                self._page3_completed = True
+            #  Activation automatique du bouton Suivant
+            self.nextBtn.setEnabled(self._page3_completed)
+
+        except Exception as e:
+            self.page3StatusLabel.setText(f" Erreur de calcul: {str(e)}")
+            self._page3_completed = False
+            self.nextBtn.setEnabled(False)
+
+            
+    def _check_page3_validity(self):
+        """Vérifie que la matrice AHP est complète."""
+        size = len(self.criteria)
+
+        for i in range(size):
+            for j in range(size):
+                item = self.pairwiseMatrix.item(i, j)
+                if item is None or not item.text():
+                    self.page3NextButton.setEnabled(False)
+                    return
+
+        self.page3NextButton.setEnabled(True)
+        self.pairwiseMatrix.itemChanged.connect(self._check_page3_validity)
+
+    # ========================================================================
+    # PAGE 4: GÉNÉRATION DU RASTER FINAL
+    # ========================================================================
+    
+    def _setup_page4(self):
+        """Préparer la page de génération du raster final."""
+        # Afficher un résumé
+        summary = "Résumé de l'analyse AHP:\n\n"
+        summary += f"Nombre de critères: {len(self.criteria)}\n\n"
+        
+        summary += "Critères et poids:\n"
+        for i, criterion in enumerate(self.criteria):
+            raster_name = self.raster_assignments[criterion]['layer'].name()
+            raster_type = self.raster_assignments[criterion]['type']
+            weight = self.weights[i]
+            summary += f"  • {criterion} ({raster_type}): {weight:.4f} → {raster_name}\n"
+        
+        summary += f"\nRatio de cohérence (CR): {self.cr_value:.4f}\n"
+        summary += "Prêt pour la génération du raster final.\n"
+        
+        self.summaryTextEdit.setText(summary)
+    
+    def _generate_final_raster(self):
+        """Générer le raster final pondéré (QGIS natif)."""
+        try:
+            self.page4StatusLabel.setText(" Génération en cours...")
+            self.page4StatusLabel.setStyleSheet("color: blue; font-weight: bold;")
+
+          
+            # Récupération des rasters et poids
+          
+            rasters = []
+            weights_list = []
+
+            for i, criterion in enumerate(self.criteria):
+                rasters.append(self.raster_assignments[criterion]['layer'])
+                weights_list.append(self.weights[i])
+
+        
+            # Choix du fichier de sortie (nom par défaut)
+        
+            from qgis.PyQt.QtWidgets import QFileDialog
+            import os
+
+            default_name = "AHP_result.tif"
+
+            output_path, _ = QFileDialog.getSaveFileName(
+                self,
+                "Enregistrer le raster AHP",
+                default_name,
+                "GeoTIFF (*.tif)"
+            )
+
+            if not output_path:
+                raise RuntimeError("Aucun fichier de sortie sélectionné.")
+
+            if not output_path.lower().endswith(".tif"):
+                output_path += ".tif"
+
+     
+            # Calcul raster pondéré (QGIS raster calculator)
+  
+
+
+            output_layer = weighted_raster(
+                rasters,
+                weights_list,
+                output_path=output_path,
+                add_to_project=True
+            )
+
+            if output_layer and output_layer.isValid():
+                self.page4StatusLabel.setText(" Raster final généré avec succès et ajouté au projet !")
+                self.page4StatusLabel.setStyleSheet("color: green; font-weight: bold;")
+
+                QMessageBox.information(
+                    self,
+                    "Succès",
+                    f"Le raster AHP a été généré avec succès:\n{output_path}"
+                )
+            else:
+                raise RuntimeError("Raster de sortie invalide")
+
+        except Exception as e:
+            self.page4StatusLabel.setText(f" Erreur : {str(e)}")
+            self.page4StatusLabel.setStyleSheet("color: red; font-weight: bold;")
+
+            QMessageBox.critical(
+                self,
+                "Erreur",
+                f"Une erreur s'est produite lors de la génération du raster final :\n\n{str(e)}"
+            )
+
+
+    # ========================================================================
+    # NAVIGATION
+    # ========================================================================
+    
+    def _next_page(self):
+        current_index = self.stackedWidget.currentIndex()
+
+        # Page 0 → Page 1 (info → critères) : AUCUNE condition
+        if current_index == 1:  # Critères → Rasters
+            if not self.criteria_validated:
+                QMessageBox.warning(
+                    self,
+                    "Validation requise",
+                    "Veuillez valider les critères avant de continuer."
+                )
+                return
+
+        elif current_index == 2:  # Rasters → Matrice
+            if not getattr(self, '_page2_completed', False):
+                QMessageBox.warning(
+                    self,
+                    "Assignation incomplète",
+                    "Veuillez assigner un raster compatible à chaque critère."
+                )
+                return
+            self._setup_page3()
+
+        elif current_index == 3:  # Matrice → Génération
+            if not getattr(self, '_page3_completed', False):
+                QMessageBox.warning(
+                    self,
+                    "Cohérence insuffisante",
+                    "Le ratio de cohérence (CR) doit être ≤ 0.1 pour continuer."
+                )
+                return
+            self._setup_page4()
+
+        next_index = current_index + 1
+        if next_index < self.stackedWidget.count():
+            self.stackedWidget.setCurrentIndex(next_index)
+            self._update_navigation_buttons()
+
+    
+    def _previous_page(self):
+        """Retourner à la page précédente."""
+        current_index = self.stackedWidget.currentIndex()
+        if current_index > 0:
+            self.stackedWidget.setCurrentIndex(current_index - 1)
+            self._update_navigation_buttons()
+    
+    def _update_navigation_buttons(self):
+        current_index = self.stackedWidget.currentIndex()
+
+        # Bouton Précédent
+        self.previousBtn.setEnabled(current_index > 0)
+
+        # Bouton Suivant
+        if current_index == 0:
+            # PAGE 0 – Information
+            self.nextBtn.setEnabled(True)
+
+        elif current_index == 1:
+            # PAGE 1 – Critères
+            self.nextBtn.setEnabled(self.criteria_validated)
+
+        elif current_index == 2:
+            # PAGE 2 – Rasters
+            self.nextBtn.setEnabled(
+                hasattr(self, '_page2_completed') and self._page2_completed
+            )
+
+        elif current_index == 3:
+            # PAGE 3 – Matrice AHP
+            self.nextBtn.setEnabled(
+                hasattr(self, '_page3_completed') and self._page3_completed
+            )
+
+        else:
+            # PAGE 4 – Fin
+            self.nextBtn.setEnabled(False)

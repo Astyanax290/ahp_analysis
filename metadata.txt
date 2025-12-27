@@ -3,14 +3,14 @@
 # This file should be included when you package your plugin.# Mandatory items:
 
 [general]
-name=Hierarchical Multi-Criteria Analysis
+name=Analyse Multicritère Hiérarchique
 qgisMinimumVersion=3.0
-description=QGIS plugin for hierarchical multi-criteria analysis (AHP – Saaty method) using raster layers
+description=Extension QGIS pour l'analyse multicritère hiérarchique (AHP - méthode de Saaty) utilisant des couches raster
 version=0.1
 author=Sewedo GNANSOUNOU
 email=sewedo.gnansounou@gmail.com
 
-about=AHP Raster Analysis is a QGIS plugin designed to perform spatial multi-criteria decision analysis using the Analytic Hierarchy Process (AHP – Saaty method). The plugin allows users to combine multiple raster criteria, define pairwise comparisons, compute criteria weights, evaluate consistency ratios, and generate a weighted suitability raster to support spatial decision-making processes.
+about=AHP Raster Analysis est une extension QGIS conçue pour réaliser des analyses multicritères spatiales à l'aide de la méthode AHP (Analytic Hierarchy Process - Saaty). Cette extension permet de combiner plusieurs critères raster, de définir des comparaisons par paires, de calculer les pondérations des critères, d'évaluer les taux de cohérence et de générer un raster de pertinence pondéré afin d'aider à la prise de décision spatiale.
 
 tracker=https://github.com/Astyanax290/ahp_analysis
 repository=https://github.com/Astyanax290/ahp_analysis
@@ -23,11 +23,11 @@ hasProcessingProvider=no
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=python, AHP, raster, multicriteria, GIS, suitability, decision support, Saaty
+tags=python, AHP, raster, multicritère, GIS, analyse, décision, Saaty, Aide à la décision
 
 homepage=https://github.com/Astyanax290/ahp_analysis
 category=Plugins
-icon=icon.png
+icon=icon2.png
 # experimental flag
 experimental=False
 
@@ -44,4 +44,3 @@ Category of the plugin: Raster, Vector, Database or Web
 
 # If the plugin can run on QGIS Server.
 server=False
-

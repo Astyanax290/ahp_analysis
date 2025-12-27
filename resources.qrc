@@ -1,5 +1,6 @@
 <RCC>
-    <qresource prefix="/plugins/ahp_analysis" >
+    <qresource prefix="/plugins/ahp_analysis">
         <file>icon.png</file>
+        <file>icon2.png</file>  <!-- ton nouveau fichier -->
     </qresource>
 </RCC>
