@@ -53,7 +53,7 @@ Les rasters Cost ne sont pas inversés automatiquement
 
 L’utilisateur est responsable de la préparation des données
 
-L’analyse est limitée à des rasters pas aux vecteurs
+L’analyse est limitée à des fichiers rasters. Ne fonctionne pas sur des vecteurs
 
 
 

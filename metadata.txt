@@ -5,7 +5,7 @@
 [general]
 name=Analyse Multicritère Hiérarchique
 qgisMinimumVersion=3.0
-description=Extension QGIS pour l'analyse multicritère hiérarchique (AHP - méthode de Saaty) utilisant des couches raster
+description=QGIS extension for hierarchical multi-criteria analysis using raster layers
 version=0.1
 author=Sewedo GNANSOUNOU
 email=sewedo.gnansounou@gmail.com
