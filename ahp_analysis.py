@@ -51,7 +51,7 @@ class AhpAnalysis:
         locale_path = os.path.join(
             self.plugin_dir,
             'i18n',
-            f'AhpAnalysis_{locale}.qm'
+            f'ahp_analysis_{locale}.qm'
         )
 
         if os.path.exists(locale_path):

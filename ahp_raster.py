@@ -57,25 +57,24 @@ def weighted_raster(rasters, weights, output_path=None, add_to_project=True):
 
     return output_layer
 
-def check_raster_compatibility(layer, reference, tolerance=1e-6):
+def check_raster_compatibility(layer, reference, tr, tolerance=1e-6):
     """
     Vérifie la compatibilité spatiale stricte entre deux rasters.
-    
-    layer: QgsRasterLayer à vérifier
-    reference: QgsRasterLayer de référence
-    
-    Retourne: tuple (bool compatible, str message)
+    Retourne: tuple (bool, message utilisateur traduit)
     """
-    # Vérification du CRS
+
     if reference is None:
-        return True, "Premier raster défini comme référence."
+        return True, tr("Premier raster défini comme référence.")
 
     # CRS
     if layer.crs() != reference.crs():
-        return False, (
-            f"❌ CRS incompatible:\n"
-            f"Référence: {reference.crs().authid()}\n"
-            f"Sélectionné: {layer.crs().authid()}"
+        return False, tr(
+            "❌ CRS incompatible:\n"
+            "Référence : {ref}\n"
+            "Sélectionné : {sel}"
+        ).format(
+            ref=reference.crs().authid(),
+            sel=layer.crs().authid()
         )
 
     # Résolution
@@ -83,18 +82,23 @@ def check_raster_compatibility(layer, reference, tolerance=1e-6):
         abs(reference.rasterUnitsPerPixelX() - layer.rasterUnitsPerPixelX()) < tolerance and
         abs(reference.rasterUnitsPerPixelY() - layer.rasterUnitsPerPixelY()) < tolerance
     ):
-        return False, (
-            f"❌ Résolution incompatible:\n"
-            f"Référence: {reference.rasterUnitsPerPixelX():.6f} x {reference.rasterUnitsPerPixelY():.6f}\n"
-            f"Sélectionné: {layer.rasterUnitsPerPixelX():.6f} x {layer.rasterUnitsPerPixelY():.6f}"
+        return False, tr(
+            "❌ Résolution incompatible:\n"
+            "Référence : {rx:.6f} x {ry:.6f}\n"
+            "Sélectionné : {sx:.6f} x {sy:.6f}"
+        ).format(
+            rx=reference.rasterUnitsPerPixelX(),
+            ry=reference.rasterUnitsPerPixelY(),
+            sx=layer.rasterUnitsPerPixelX(),
+            sy=layer.rasterUnitsPerPixelY()
         )
 
     # Emprise
     if not reference.extent().intersects(layer.extent()):
-        return False, (
+        return False, tr(
             "❌ Aucun recouvrement spatial.\n"
             "Les rasters doivent se superposer."
         )
 
-    return True, "✅ Raster compatible."
+    return True, tr("✅ Raster compatible.")
 

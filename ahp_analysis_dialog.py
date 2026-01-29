@@ -102,8 +102,11 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
     def _add_criterion(self):
         """Ajouter une nouvelle ligne pour un critère."""
         if self.criteria_validated:
-            QMessageBox.warning(self, "Critères validés", 
-                                "Les critères ont déjà été validés. Vous ne pouvez plus les modifier.")
+            QMessageBox.warning(
+                self,
+                self.tr("Critères validés"),
+                self.tr("Les critères ont déjà été validés. Vous ne pouvez plus les modifier.")
+            )
             return
         
         row_count = self.criteriaTable.rowCount()
@@ -116,8 +119,11 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
     def _remove_criterion(self):
         """Supprimer la ligne sélectionnée."""
         if self.criteria_validated:
-            QMessageBox.warning(self, "Critères validés", 
-                                "Les critères ont déjà été validés. Vous ne pouvez plus les modifier.")
+            QMessageBox.warning(
+                self,
+                self.tr("Critères validés"),
+                self.tr("Les critères ont déjà été validés. Vous ne pouvez plus les modifier.")
+            )
             return
         
         current_row = self.criteriaTable.currentRow()
@@ -127,8 +133,11 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
     def _clear_criteria(self):
         """Effacer tous les critères."""
         if self.criteria_validated:
-            QMessageBox.warning(self, "Critères validés", 
-                                "Les critères ont déjà été validés. Vous ne pouvez plus les modifier.")
+            QMessageBox.warning(
+                self,
+                self.tr("Critères validés"),
+                self.tr("Les critères ont déjà été validés. Vous ne pouvez plus les modifier.")
+            )
             return
         
         self.criteriaTable.setRowCount(0)
@@ -142,19 +151,21 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
             if item and item.text().strip():
                 criterion_name = item.text().strip()
                 if criterion_name in criteria:
-                    self.page1StatusLabel.setText(" Erreur : Critères dupliqués détectés.")
+                    self.page1StatusLabel.setText( self.tr(" Erreur : Critères dupliqués détectés."))
                     return
                 criteria.append(criterion_name)
         
         # Validation
         if len(criteria) < 3:
-            self.page1StatusLabel.setText(" Veuillez définir au moins 3 critères.")
+            self.page1StatusLabel.setText( self.tr(" Veuillez définir au moins 3 critères."))
             return
         
         # Validation réussie
         self.criteria = criteria
         self.criteria_validated = True
-        self.page1StatusLabel.setText(f" {len(criteria)} critères validés avec succès.")
+        self.page1StatusLabel.setText(
+            self.tr(" {count} critères validés avec succès.").format(count=len(criteria))
+        )
         self.page1StatusLabel.setStyleSheet("color: green; font-weight: bold;")
         
         # Désactiver la table et les boutons
@@ -190,7 +201,7 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
             
             # Colonne 1: ComboBox pour sélectionner le raster
             raster_combo = QComboBox()
-            raster_combo.addItem("-- Sélectionner un raster --", None)
+            raster_combo.addItem(self.tr("-- Sélectionner un raster --"), None)
             for layer in raster_layers:
                 raster_combo.addItem(layer.name(), layer)
             raster_combo.currentIndexChanged.connect(
@@ -204,7 +215,7 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
             self.rasterAssignmentTable.setCellWidget(row, 2, type_combo)
             
             # Colonne 3: Statut de compatibilité
-            status_item = QTableWidgetItem("⏳ En attente")
+            status_item = QTableWidgetItem(self.tr("⏳ En attente"))
             status_item.setFlags(status_item.flags() & ~Qt.ItemIsEditable)
             status_item.setBackground(QColor(220, 220, 220))
             self.rasterAssignmentTable.setItem(row, 3, status_item)
@@ -221,7 +232,7 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
         selected_layer = raster_combo.currentData()
         if selected_layer is None:
             status_item = self.rasterAssignmentTable.item(row, 3)
-            status_item.setText("⏳ En attente")
+            status_item.setText(self.tr("⏳ En attente"))
             status_item.setBackground(QColor(220, 220, 220))
 
             # Supprimer l’assignation existante
@@ -237,9 +248,11 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
             if data['layer'].name() == selected_name:
                 QMessageBox.warning(
                     self,
-                    "Raster déjà utilisé",
-                    f"Le raster '{selected_name}' est déjà associé à un autre critère.\n"
-                    "Veuillez choisir un raster différent."
+                    self.tr("Raster déjà utilisé"),
+                    self.tr(
+                        "Le raster '{name}' est déjà associé à un autre critère.\n"
+                        "Veuillez choisir un raster différent."
+                    ).format(name=selected_name)
                 )
                 raster_combo.setCurrentIndex(0)
                 return
@@ -247,7 +260,7 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
         if selected_layer is None:
             # Réinitialiser le statut
             status_item = self.rasterAssignmentTable.item(row, 3)
-            status_item.setText("⏳ En attente")
+            status_item.setText(self.tr("⏳ En attente"))
             status_item.setBackground(QColor(220, 220, 220))
             return
         
@@ -265,7 +278,7 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
 
         status_item = self.rasterAssignmentTable.item(row, 3)
         if is_compatible:
-            status_item.setText("✅ Compatible")
+            status_item.setText(self.tr("✅ Compatible"))
             status_item.setBackground(QColor(144, 238, 144))  # Vert clair
             
             # Enregistrer l'assignation
@@ -276,11 +289,11 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
                 'type': type_combo.currentText()
             }
         else:
-            status_item.setText("❌ Incompatible")
+            status_item.setText(self.tr("❌ Incompatible"))
             status_item.setBackground(QColor(255, 182, 193))  # Rouge clair
             
             # Afficher message d'erreur détaillé
-            QMessageBox.critical(self, "Incompatibilité raster", message)
+            QMessageBox.critical(self, self.tr("Incompatibilité raster"), message)
             
             # Réinitialiser la sélection
             raster_combo.setCurrentIndex(0)
@@ -396,14 +409,18 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
             if self.cr_value > 0.1:
                 self.crValueLabel.setStyleSheet("color: red; font-weight: bold;")
                 self.page3StatusLabel.setText(
-                    " CR > 0.1 : La matrice n'est pas cohérente. Veuillez réviser vos comparaisons."
+                    self.tr(
+                        " CR > 0.1 : La matrice n'est pas cohérente. Veuillez réviser vos comparaisons."
+                    )
                 )
                 self.page3StatusLabel.setStyleSheet("color: red; font-weight: bold;")
                 self._page3_completed = False
 
             else:
                 self.crValueLabel.setStyleSheet("color: green; font-weight: bold;")
-                self.page3StatusLabel.setText(" CR ≤ 0.1 : La matrice est cohérente.")
+                self.page3StatusLabel.setText(
+                    self.tr(" CR ≤ 0.1 : La matrice est cohérente.")
+                )
                 self.page3StatusLabel.setStyleSheet("color: green; font-weight: bold;")
                 self._page3_completed = True
             #  Activation automatique du bouton Suivant
@@ -436,25 +453,41 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
     def _setup_page4(self):
         """Préparer la page de génération du raster final."""
         # Afficher un résumé
-        summary = "Résumé de l'analyse AHP:\n\n"
-        summary += f"Nombre de critères: {len(self.criteria)}\n\n"
-        
-        summary += "Critères et poids:\n"
+        summary = self.tr("Résumé de l'analyse AHP:\n\n")
+
+        summary += self.tr("Nombre de critères: {count}\n\n").format(
+            count=len(self.criteria)
+        )
+
+        summary += self.tr("Critères et poids:\n")
+
         for i, criterion in enumerate(self.criteria):
             raster_name = self.raster_assignments[criterion]['layer'].name()
             raster_type = self.raster_assignments[criterion]['type']
             weight = self.weights[i]
-            summary += f"  • {criterion} ({raster_type}): {weight:.4f} → {raster_name}\n"
-        
-        summary += f"\nRatio de cohérence (CR): {self.cr_value:.4f}\n"
-        summary += "Prêt pour la génération du raster final.\n"
-        
+
+            summary += self.tr(
+                "  • {criterion} ({type}): {weight:.4f} → {raster}\n"
+            ).format(
+                criterion=criterion,
+                type=raster_type,
+                weight=weight,
+                raster=raster_name
+            )
+
+        summary += self.tr(
+            "\nRatio de cohérence (CR): {cr:.4f}\n"
+        ).format(cr=self.cr_value)
+
+        summary += self.tr("Prêt pour la génération du raster final.\n")
+
         self.summaryTextEdit.setText(summary)
+
     
     def _generate_final_raster(self):
         """Générer le raster final pondéré (QGIS natif)."""
         try:
-            self.page4StatusLabel.setText(" Génération en cours...")
+            self.page4StatusLabel.setText(self.tr(" Génération en cours..."))
             self.page4StatusLabel.setStyleSheet("color: blue; font-weight: bold;")
 
           
@@ -477,13 +510,13 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
 
             output_path, _ = QFileDialog.getSaveFileName(
                 self,
-                "Enregistrer le raster AHP",
+                self.tr("Enregistrer le raster AHP"),
                 default_name,
                 "GeoTIFF (*.tif)"
             )
 
             if not output_path:
-                raise RuntimeError("Aucun fichier de sortie sélectionné.")
+                raise RuntimeError(self.tr("Aucun fichier de sortie sélectionné."))
 
             if not output_path.lower().endswith(".tif"):
                 output_path += ".tif"
@@ -501,16 +534,18 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
             )
 
             if output_layer and output_layer.isValid():
-                self.page4StatusLabel.setText(" Raster final généré avec succès et ajouté au projet !")
+                self.page4StatusLabel.setText(self.tr("Raster final généré avec succès et ajouté au projet !"))
                 self.page4StatusLabel.setStyleSheet("color: green; font-weight: bold;")
 
                 QMessageBox.information(
                     self,
-                    "Succès",
-                    f"Le raster AHP a été généré avec succès:\n{output_path}"
+                    self.tr("Succès"),
+                    self.tr(
+                        "Le raster AHP a été généré avec succès:\n{path}"
+                    ).format(path=output_path)
                 )
             else:
-                raise RuntimeError("Raster de sortie invalide")
+                raise RuntimeError(self.tr("Raster de sortie invalide"))
 
         except Exception as e:
             self.page4StatusLabel.setText(f" Erreur : {str(e)}")
@@ -518,8 +553,10 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
 
             QMessageBox.critical(
                 self,
-                "Erreur",
-                f"Une erreur s'est produite lors de la génération du raster final :\n\n{str(e)}"
+                self.tr("Erreur"),
+                self.tr(
+                    "Une erreur s'est produite lors de la génération du raster final :\n\n{error}"
+                ).format(error=str(e))
             )
 
 
@@ -535,8 +572,8 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
             if not self.criteria_validated:
                 QMessageBox.warning(
                     self,
-                    "Validation requise",
-                    "Veuillez valider les critères avant de continuer."
+                    self.tr("Validation requise"),
+                    self.tr("Veuillez valider les critères avant de continuer.")
                 )
                 return
 
@@ -544,8 +581,8 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
             if not getattr(self, '_page2_completed', False):
                 QMessageBox.warning(
                     self,
-                    "Assignation incomplète",
-                    "Veuillez assigner un raster compatible à chaque critère."
+                    self.tr("Assignation incomplète"),
+                    self.tr("Veuillez assigner un raster compatible à chaque critère.")
                 )
                 return
             self._setup_page3()
@@ -554,8 +591,8 @@ class AhpAnalysisDialog(QDialog, FORM_CLASS):
             if not getattr(self, '_page3_completed', False):
                 QMessageBox.warning(
                     self,
-                    "Cohérence insuffisante",
-                    "Le ratio de cohérence (CR) doit être ≤ 0.1 pour continuer."
+                    self.tr("Cohérence insuffisante"),
+                    self.tr("Le ratio de cohérence (CR) doit être ≤ 0.1 pour continuer.")
                 )
                 return
             self._setup_page4()

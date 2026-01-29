@@ -10,7 +10,7 @@ version=0.1
 author=Sewedo GNANSOUNOU
 email=sewedo.gnansounou@gmail.com
 
-about=AHP Raster Analysis est une extension QGIS conçue pour réaliser des analyses multicritères spatiales à l'aide de la méthode AHP (Analytic Hierarchy Process - Saaty). Cette extension permet de combiner plusieurs critères raster, de définir des comparaisons par paires, de calculer les pondérations des critères, d'évaluer les taux de cohérence et de générer un raster de pertinence pondéré afin d'aider à la prise de décision spatiale.
+about=AHP Raster Analysis is a QGIS extension designed to perform spatial multi-criteria analyses using the AHP (Analytic Hierarchy Process - Saaty) method. This extension allows you to combine multiple raster criteria, define pairwise comparisons, calculate criterion weights, evaluate consistency rates, and generate a weighted relevance raster to aid spatial decision-making.
 
 tracker=https://github.com/Astyanax290/ahp_analysis/issues
 repository=https://github.com/Astyanax290/ahp_analysis
@@ -23,7 +23,7 @@ hasProcessingProvider=no
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=python, AHP, raster, multicritère, GIS, analyse, décision, Saaty, Aide à la décision
+tags=python, AHP, raster, multicritère, GIS, analyse, décision, Saaty, decision making, multicriteria
 
 homepage=https://github.com/Astyanax290/ahp_analysis
 category=Plugins
