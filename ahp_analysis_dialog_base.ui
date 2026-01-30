@@ -17,7 +17,7 @@
    <item>
     <widget class="QLabel" name="titleLabel">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:14pt; font-weight:600;&quot;&gt;Analyse AHP - Méthode de Saaty&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-size:14pt; font-weight:600;"&gt;Analyse AHP - Méthode de Saaty&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -27,7 +27,7 @@
    <item>
     <widget class="QStackedWidget" name="stackedWidget">
      <property name="currentIndex">
-      <number>4</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="page0">
       <layout class="QVBoxLayout" name="page0Layout">
@@ -35,9 +35,9 @@
         <widget class="QLabel" name="page0Title">
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;
-          &lt;p align=&quot;center&quot;&gt;
-          &lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;
-          Bienvenue dans l’outil d’analyse AHP
+          &lt;p align="center"&gt;
+          &lt;span style=" font-size:12pt; font-weight:600;"&gt;
+          Bienvenue dans l'outil d'analyse AHP
           &lt;/span&gt;
           &lt;/p&gt;
           &lt;/body&gt;&lt;/html&gt;</string>
@@ -56,7 +56,7 @@
           <item>
            <widget class="QLabel" name="objectiveLabel">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Ce plugin permet de réaliser une analyse multicritère hiérarchique fondée sur la méthode AHP (Analytic Hierarchy Process) de Saaty. Il vise à combiner plusieurs critères géographiques sous forme de rasters pondérés afin de produire une carte d’aide à la décision.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align="justify"&gt;&lt;span style=" font-size:10pt;"&gt;Ce plugin permet de réaliser une analyse multicritère hiérarchique fondée sur la méthode AHP (Analytic Hierarchy Process) de Saaty. Il vise à combiner plusieurs critères géographiques sous forme de rasters pondérés afin de produire une carte d'aide à la décision.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="wordWrap">
              <bool>true</bool>
@@ -84,7 +84,7 @@
           <item>
            <widget class="QLabel" name="prereqLabel">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Tous les rasters doivent être prétraités et normalisés (classifiés) par l’utilisateur avant l’analyse, de manière à ce que des valeurs élevées représentent toujours une situation plus favorable.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Le choix &lt;/span&gt;&lt;span style=&quot; font-size:10pt; font-style:italic;&quot;&gt;cost / benefit&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; à l'étape 2 a donc un rôle informatif et méthodologique. Il permet de vérifier la cohérence conceptuelle des critères, mais il n’intervient pas directement dans le calcul final du raster pondéré.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Afin de garantir la validité des calculs, tous les rasters associés aux critères doivent impérativement:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;- utiliser le même système de coordonnées (CRS),&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;- avoir la même résolution spatiale,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;- partager la même emprise géographique,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;- être déjà classifiés par l’utilisateur.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-size:10pt;"&gt;Tous les rasters doivent être prétraités et normalisés (classifiés) par l'utilisateur avant l'analyse, de manière à ce que des valeurs élevées représentent toujours une situation plus favorable.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=" font-size:10pt;"&gt;Le choix &lt;/span&gt;&lt;span style=" font-size:10pt; font-style:italic;"&gt;cost / benefit&lt;/span&gt;&lt;span style=" font-size:10pt;"&gt; à l'étape 2 a donc un rôle informatif et méthodologique. Il permet de vérifier la cohérence conceptuelle des critères, mais il n'intervient pas directement dans le calcul final du raster pondéré.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=" font-size:10pt;"&gt;Afin de garantir la validité des calculs, tous les rasters associés aux critères doivent impérativement:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=" font-size:10pt;"&gt;- utiliser le même système de coordonnées (CRS),&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=" font-size:10pt;"&gt;- avoir la même résolution spatiale,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=" font-size:10pt;"&gt;- partager la même emprise géographique,&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=" font-size:10pt;"&gt;- être déjà classifiés par l'utilisateur.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="wordWrap">
              <bool>true</bool>
@@ -97,7 +97,7 @@
        <item>
         <widget class="QLabel" name="page0Footer">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;Cliquez sur « Suivant » pour commencer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-style:italic;"&gt;Cliquez sur « Suivant » pour commencer.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -124,7 +124,7 @@
        <item>
         <widget class="QLabel" name="page1Title">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;Étape 1/4 : Définition des critères&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-size:12pt; font-weight:600;"&gt;Étape 1/4 : Définition des critères&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -215,14 +215,14 @@
        <item>
         <widget class="QLabel" name="page2Title">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;Étape 2/4 : Assignation des rasters aux critères&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-size:12pt; font-weight:600;"&gt;Étape 2/4 : Assignation des rasters aux critères&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QLabel" name="page2Description">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Associez un raster à chaque critère.&lt;span style=&quot; font-weight:600;&quot;/&gt;Tous les rasters doivent avoir le même CRS, résolution et emprise.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Associez un raster à chaque critère.&lt;span style=" font-weight:600;"/&gt;Tous les rasters doivent avoir le même CRS, résolution et emprise.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>
@@ -273,7 +273,7 @@
        <item>
         <widget class="QLabel" name="page3Title">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;Étape 3/4 : Matrice de comparaison pair-à-pair (Échelle de Saaty)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-size:12pt; font-weight:600;"&gt;Étape 3/4 : Matrice de comparaison pair-à-pair (Échelle de Saaty)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -349,7 +349,7 @@
        <item>
         <widget class="QLabel" name="page4Title">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;Étape 4/4 : Génération du raster final&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-size:12pt; font-weight:600;"&gt;Étape 4/4 : Génération du raster final&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
